@@ -1,8 +1,26 @@
 from flask import request, jsonify
 from datetime import datetime
 import signal
+import uuid
+from functools import wraps
 from app import app, logger
 from utils import validate_request, create_response, simulate_kubernetes_api, markdown_json_to_dict
+
+def require_token(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid Authorization header'}), 401
+        
+        token = auth_header.split(' ')[1]
+        try:
+            uuid.UUID(token)
+        except ValueError:
+            return jsonify({'error': 'Invalid token format - must be UUID'}), 401
+            
+        return f(*args, **kwargs)
+    return decorated
 
 
 @app.route('/')
@@ -68,6 +86,7 @@ def request_details():
 @app.route('/api/<path:dynamic_path>',
            methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 @app.route('/apis/<path:dynamic_path>', methods=['GET'])
+@require_token
 def handle_dynamic_path(dynamic_path=""):
     """
     Handle all requests to dynamic paths under /api/
