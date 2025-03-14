@@ -5,6 +5,7 @@ import uuid
 from functools import wraps
 from app import app, logger
 from utils import validate_request, create_response, simulate_kubernetes_api, markdown_json_to_dict
+from database import init_db, store_cache, get_cache
 
 def require_token(f):
     @wraps(f)
@@ -111,6 +112,48 @@ def handle_dynamic_path(dynamic_path=""):
 
         from functools import partial
         from flask import copy_current_request_context
+
+
+@app.route('/cache', methods=['POST'])
+@require_token
+def store_cache_entry():
+    """Store a cache entry"""
+    if not request.is_json:
+        return jsonify({'error': 'Content-Type must be application/json'}), 400
+
+    data = request.get_json()
+    if not data or 'api_path' not in data or 'response' not in data:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    auth_token = request.headers.get('Authorization').split(' ')[1]
+    try:
+        cache_id = store_cache(
+            user_token=auth_token,
+            api_path=data['api_path'],
+            response=data['response']
+        )
+        return jsonify({
+            'message': 'Cache entry stored successfully',
+            'cache_id': str(cache_id)
+        }), 201
+    except Exception as e:
+        logger.error(f"Error storing cache: {str(e)}")
+        return jsonify({'error': 'Failed to store cache entry'}), 500
+
+@app.route('/cache/<path:api_path>', methods=['GET'])
+@require_token
+def get_cache_entry(api_path):
+    """Get a cache entry"""
+    auth_token = request.headers.get('Authorization').split(' ')[1]
+    try:
+        cached_response = get_cache(auth_token, api_path)
+        if cached_response:
+            return jsonify({'response': cached_response}), 200
+        return jsonify({'error': 'Cache entry not found'}), 404
+    except Exception as e:
+        logger.error(f"Error retrieving cache: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve cache entry'}), 500
+
 
         try:
             if timeout:

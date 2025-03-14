@@ -11,4 +11,6 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Import routes after app initialization to avoid circular imports
+from database import init_db
+init_db()
 from routes import *  # noqa: E402
