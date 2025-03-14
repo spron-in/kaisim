@@ -8,13 +8,14 @@ def root():
     """
     Root endpoint showing welcome message and available endpoints
     """
-    return jsonify({
-        'message': "I'm Kubernetes AI Simulator. I can respond to your kubectl requests with AI generated content. More at https://kais.im",
-        'endpoints': {
-            '/api': 'simulate kubernetes api requests and get responses generated with AI',
-            '/details': 'the endpoint to share all request details, for testing purposes'
+    response = {
+        "message": "I'm Kubernetes AI Simulator. I can respond to your kubectl requests with AI generated content. More at https://kais.im",
+        "endpoints": {
+            "/api": "simulate kubernetes api requests and get responses generated with AI",
+            "/details": "the endpoint to share all request details, for testing purposes"
         }
-    }), 200
+    }
+    return jsonify(response), 200, {'indent': 2}
 
 @app.route('/details', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 def request_details():
