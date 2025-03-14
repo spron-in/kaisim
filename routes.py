@@ -41,7 +41,9 @@ def root():
             "/api":
             "simulate kubernetes api requests and get responses generated with AI",
             "/details":
-            "the endpoint to share all request details, for testing purposes"
+            "the endpoint to share all request details, for testing purposes",
+            "/cache":
+            "provide cached responses to API requests"
         })
     ])
 
@@ -184,7 +186,7 @@ def store_cache_entry():
         logger.error(f"Error storing cache: {str(e)}")
         return jsonify({'error': 'Failed to store cache entry'}), 500
 
-@app.route('/cache/all', methods=['GET'])
+@app.route('/cache', methods=['GET'])
 @require_token
 def get_all_cache_entries():
     """Get all cache entries for a user"""
@@ -210,7 +212,7 @@ def get_all_cache_entries():
         logger.error(f"Error retrieving cache entries: {str(e)}")
         return jsonify({'error': 'Failed to retrieve cache entries'}), 500
 
-@app.route('/cache/<uuid:cache_id>', methods=['GET'])
+@app.route('/cache/<int:cache_id>', methods=['GET'])
 @require_token
 def get_cache_entry(cache_id):
     """Get a cache entry by its ID"""
