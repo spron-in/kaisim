@@ -235,6 +235,31 @@ def get_cache_entry(cache_id):
         logger.error(f"Error retrieving cache: {str(e)}")
         return jsonify({'error': 'Failed to retrieve cache entry'}), 500
 
+@app.route('/cache/<uuid:cache_id>', methods=['DELETE'])
+@require_token
+def delete_cache_entry(cache_id):
+    """Delete a cache entry by its ID"""
+    auth_token = request.headers.get('Authorization').split(' ')[1]
+    try:
+        cache_entry = APICache.query.filter_by(cache_id=cache_id).first()
+        
+        if not cache_entry:
+            return jsonify({'error': 'Cache entry not found'}), 404
+            
+        if cache_entry.is_predefined:
+            return jsonify({'error': 'Cannot delete predefined cache entries'}), 403
+            
+        if cache_entry.user_token != uuid.UUID(auth_token):
+            return jsonify({'error': 'Unauthorized to delete this cache entry'}), 403
+            
+        db.session.delete(cache_entry)
+        db.session.commit()
+        
+        return jsonify({'message': 'Cache entry deleted successfully'}), 200
+    except Exception as e:
+        logger.error(f"Error deleting cache entry: {str(e)}")
+        return jsonify({'error': 'Failed to delete cache entry'}), 500
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Not found'}), 404
