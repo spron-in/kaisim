@@ -15,8 +15,8 @@ def root():
     response_data = OrderedDict([
         ("message", "I'm Kubernetes AI Simulator. I can respond to your kubectl requests with AI generated content. More at https://kais.im"),
         ("endpoints", {
-            "/api": "simulate kubernetes api requests and get responses generated with AI",
-            "/details": "the endpoint to share all request details, for testing purposes"
+            "/api": "simulate Kubernetes api requests and get responses generated with AI",
+            "/details": "the endpoint to view all request details, for testing purposes"
         })
     ])
     
