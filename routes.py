@@ -114,12 +114,12 @@ def handle_dynamic_path(dynamic_path=""):
                 }), 400
 
             # Log the incoming request
-        logger.debug(
-            f"Received {request.method} request for path: {dynamic_path}")
-        logger.debug(f"Request headers: {dict(request.headers)}")
-        logger.debug(f"Request data: {request.get_json(silent=True)}")
+            logger.debug(
+                f"Received {request.method} request for path: {dynamic_path}")
+            logger.debug(f"Request headers: {dict(request.headers)}")
+            logger.debug(f"Request data: {request.get_json(silent=True)}")
 
-        raw_simulated_response = simulate_kubernetes_api(request)
+            raw_simulated_response = simulate_kubernetes_api(request)
 
         # Process the request based on HTTP method
         return jsonify(markdown_json_to_dict(raw_simulated_response))
