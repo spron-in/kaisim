@@ -1,4 +1,5 @@
 
+from app import app
 from models import db, APICache
 import uuid
 import json
@@ -23,23 +24,24 @@ def init_predefined_cache():
         },
     ]
 
-    for entry in predefined_entries:
-        # Check if entry already exists
-        existing = APICache.query.filter_by(
-            api_path=entry["api_path"],
-            is_predefined=True
-        ).first()
-        
-        if not existing:
-            cache_entry = APICache(
-                cache_id=uuid.uuid4(),
+    with app.app_context():
+        for entry in predefined_entries:
+            # Check if entry already exists
+            existing = APICache.query.filter_by(
                 api_path=entry["api_path"],
-                response=entry["response"],
                 is_predefined=True
-            )
-            db.session.add(cache_entry)
-    
-    db.session.commit()
+            ).first()
+            
+            if not existing:
+                cache_entry = APICache(
+                    cache_id=uuid.uuid4(),
+                    api_path=entry["api_path"],
+                    response=entry["response"],
+                    is_predefined=True
+                )
+                db.session.add(cache_entry)
+        
+        db.session.commit()
 
 if __name__ == "__main__":
     init_predefined_cache()
