@@ -137,18 +137,21 @@ def handle_dynamic_path(dynamic_path=""):
             auth_token = request.headers.get('Authorization').split(' ')[1]
             api_path = f"/api/{dynamic_path}" if dynamic_path else "/api"
             
-            cache_entries = APICache.query.filter(
-                db.and_(
-                    APICache.api_path == api_path,
-                    db.or_(
-                        APICache.user_token == uuid.UUID(auth_token),
-                        APICache.is_predefined == True
-                    )
-                )
+            # First try to find user's cache entry
+            cache_entry = APICache.query.filter_by(
+                api_path=api_path,
+                user_token=uuid.UUID(auth_token)
             ).order_by(APICache.created_at.desc()).first()
             
-            if cache_entries:
-                return jsonify(json.loads(cache_entries.response)), 200
+            # If no user cache found, look for predefined entry
+            if not cache_entry:
+                cache_entry = APICache.query.filter_by(
+                    api_path=api_path,
+                    is_predefined=True
+                ).order_by(APICache.created_at.desc()).first()
+            
+            if cache_entry:
+                return jsonify(json.loads(cache_entry.response)), 200
                 
             # If not in cache, generate response
             raw_simulated_response = simulate_kubernetes_api(request)
