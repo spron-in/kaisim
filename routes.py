@@ -227,9 +227,15 @@ def get_cache_entry(cache_id):
                 )
             )
         ).first()
-        
+
         if cache_entry:
-            return jsonify({'response': cache_entry.response}), 200
+            cache_response = {
+                'api_path': cache_entry.api_path,
+                'response': cache_entry.response,
+                'created_at': cache_entry.created_at.isoformat(),
+                'is_predefined': cache_entry.is_predefined
+            }
+            return jsonify(cache_response), 200
         return jsonify({'error': 'Cache entry not found'}), 404
     except Exception as e:
         logger.error(f"Error retrieving cache: {str(e)}")
