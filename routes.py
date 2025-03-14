@@ -1,6 +1,38 @@
 from flask import request, jsonify
+from datetime import datetime
 from app import app, logger
 from utils import validate_request, create_response
+
+@app.route('/details', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+def request_details():
+    """
+    Show all details about the incoming request
+    """
+    # Get Authorization header and clean it for display
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.lower().startswith('bearer '):
+        token = auth_header[7:]  # Remove 'Bearer ' prefix
+        auth_info = {'type': 'Bearer', 'token': token}
+    else:
+        auth_info = {'type': None, 'token': None}
+
+    # Build detailed response
+    details = {
+        'method': request.method,
+        'url': request.url,
+        'path': request.path,
+        'headers': dict(request.headers),
+        'query_params': dict(request.args),
+        'form_data': dict(request.form),
+        'json_data': request.get_json(silent=True),
+        'auth': auth_info,
+        'content_type': request.content_type,
+        'content_length': request.content_length,
+        'remote_addr': request.remote_addr,
+        'timestamp': datetime.utcnow().isoformat()
+    }
+
+    return jsonify(details), 200
 
 @app.route('/api/<path:dynamic_path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 def handle_dynamic_path(dynamic_path):
