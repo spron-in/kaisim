@@ -90,7 +90,6 @@ def handle_dynamic_path(dynamic_path=""):
                 }), 400
 
         from functools import partial
-        from werkzeug.exceptions import TimeoutError
         from flask import copy_current_request_context
 
         if timeout:
