@@ -8,20 +8,25 @@ from app import app, logger
 from utils import validate_request, create_response, simulate_kubernetes_api, markdown_json_to_dict
 from models import db, APICache, retry_on_disconnect
 
+
 def require_token(f):
+
     @wraps(f)
     def decorated(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'error': 'Missing or invalid Authorization header'}), 401
-        
+            return jsonify(
+                {'error': 'Missing or invalid Authorization header'}), 401
+
         token = auth_header.split(' ')[1]
         try:
             uuid.UUID(token)
         except ValueError:
-            return jsonify({'error': 'Invalid token format - must be UUID'}), 401
-            
+            return jsonify({'error':
+                            'Invalid token format - must be UUID'}), 401
+
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -43,8 +48,7 @@ def root():
             "simulate kubernetes api requests and get responses generated with AI",
             "/details":
             "the endpoint to share all request details, for testing purposes",
-            "/cache":
-            "provide cached responses to API requests"
+            "/cache": "provide cached responses to API requests"
         })
     ])
 
@@ -109,8 +113,10 @@ def handle_dynamic_path(dynamic_path=""):
                     raise ValueError("Timeout must be positive")
             except ValueError:
                 return jsonify({
-                    'error': 'Invalid timeout value',
-                    'message': 'Timeout must be a positive number in seconds (e.g., 30 or 30s)'
+                    'error':
+                    'Invalid timeout value',
+                    'message':
+                    'Timeout must be a positive number in seconds (e.g., 30 or 30s)'
                 }), 400
 
         from functools import partial
@@ -126,7 +132,7 @@ def handle_dynamic_path(dynamic_path=""):
                     'error': 'Invalid request',
                     'details': validation_result['message']
                 }), 400
-        
+
             # Log the incoming request
             logger.debug(
                 f"Received {request.method} request for path: {dynamic_path}")
@@ -135,24 +141,22 @@ def handle_dynamic_path(dynamic_path=""):
 
             # Check cache first
             auth_token = request.headers.get('Authorization').split(' ')[1]
-            api_path = f"/api/{dynamic_path}" if dynamic_path else "/api"
-            
+            api_path = request.path
+
             # First try to find user's cache entry
             cache_entry = APICache.query.filter_by(
-                api_path=api_path,
-                user_token=uuid.UUID(auth_token)
-            ).order_by(APICache.created_at.desc()).first()
-            
+                api_path=api_path, user_token=uuid.UUID(auth_token)).order_by(
+                    APICache.created_at.desc()).first()
+
             # If no user cache found, look for predefined entry
             if not cache_entry:
                 cache_entry = APICache.query.filter_by(
-                    api_path=api_path,
-                    is_predefined=True
-                ).order_by(APICache.created_at.desc()).first()
-            
+                    api_path=api_path, is_predefined=True).order_by(
+                        APICache.created_at.desc()).first()
+
             if cache_entry:
                 return jsonify(json.loads(cache_entry.response)), 200
-                
+
             # If not in cache, generate response
             raw_simulated_response = simulate_kubernetes_api(request)
             return jsonify(markdown_json_to_dict(raw_simulated_response))
@@ -162,14 +166,14 @@ def handle_dynamic_path(dynamic_path=""):
                 'error': 'Internal server error',
                 'message': str(e)
             }), 500
-        
+
     except TimeoutError:
         signal.alarm(0)  # Disable the alarm
         return jsonify({
             'error': 'Timeout',
             'message': f'Request timed out after {timeout} seconds'
         }), 408
-    
+
     except Exception as e:
         if timeout:
             signal.alarm(0)  # Disable the alarm
@@ -195,8 +199,9 @@ def store_cache_entry():
     try:
         # Check if request tries to create a predefined entry
         if data.get('is_predefined', False):
-            return jsonify({'error': 'Users cannot create predefined cache entries'}), 403
-            
+            return jsonify(
+                {'error': 'Users cannot create predefined cache entries'}), 403
+
         cache_entry = APICache(
             user_token=uuid.UUID(auth_token),
             api_path=data['api_path'],
@@ -213,6 +218,7 @@ def store_cache_entry():
         logger.error(f"Error storing cache: {str(e)}")
         return jsonify({'error': 'Failed to store cache entry'}), 500
 
+
 @app.route('/cache', methods=['GET'])
 @require_token
 def get_all_cache_entries():
@@ -220,12 +226,10 @@ def get_all_cache_entries():
     auth_token = request.headers.get('Authorization').split(' ')[1]
     try:
         cache_entries = APICache.query.filter(
-            db.or_(
-                APICache.user_token == uuid.UUID(auth_token),
-                APICache.is_predefined == True
-            )
-        ).order_by(APICache.created_at.desc()).all()
-        
+            db.or_(APICache.user_token == uuid.UUID(auth_token),
+                   APICache.is_predefined == True)).order_by(
+                       APICache.created_at.desc()).all()
+
         entries = [{
             'cache_id': str(entry.cache_id),
             'api_path': entry.api_path,
@@ -233,11 +237,12 @@ def get_all_cache_entries():
             'created_at': entry.created_at.isoformat(),
             'is_predefined': entry.is_predefined
         } for entry in cache_entries]
-        
+
         return jsonify({'entries': entries}), 200
     except Exception as e:
         logger.error(f"Error retrieving cache entries: {str(e)}")
         return jsonify({'error': 'Failed to retrieve cache entries'}), 500
+
 
 @app.route('/cache/<uuid:cache_id>', methods=['GET'])
 @require_token
@@ -248,12 +253,8 @@ def get_cache_entry(cache_id):
         cache_entry = APICache.query.filter(
             db.and_(
                 APICache.cache_id == cache_id,
-                db.or_(
-                    APICache.user_token == uuid.UUID(auth_token),
-                    APICache.is_predefined == True
-                )
-            )
-        ).first()
+                db.or_(APICache.user_token == uuid.UUID(auth_token),
+                       APICache.is_predefined == True))).first()
 
         if cache_entry:
             cache_response = {
@@ -268,6 +269,7 @@ def get_cache_entry(cache_id):
         logger.error(f"Error retrieving cache: {str(e)}")
         return jsonify({'error': 'Failed to retrieve cache entry'}), 500
 
+
 @app.route('/cache/<uuid:cache_id>', methods=['DELETE'])
 @require_token
 def delete_cache_entry(cache_id):
@@ -275,23 +277,26 @@ def delete_cache_entry(cache_id):
     auth_token = request.headers.get('Authorization').split(' ')[1]
     try:
         cache_entry = APICache.query.filter_by(cache_id=cache_id).first()
-        
+
         if not cache_entry:
             return jsonify({'error': 'Cache entry not found'}), 404
-            
+
         if cache_entry.is_predefined:
-            return jsonify({'error': 'Cannot delete predefined cache entries'}), 403
-            
+            return jsonify({'error':
+                            'Cannot delete predefined cache entries'}), 403
+
         if cache_entry.user_token != uuid.UUID(auth_token):
-            return jsonify({'error': 'Unauthorized to delete this cache entry'}), 403
-            
+            return jsonify(
+                {'error': 'Unauthorized to delete this cache entry'}), 403
+
         db.session.delete(cache_entry)
         db.session.commit()
-        
+
         return jsonify({'message': 'Cache entry deleted successfully'}), 200
     except Exception as e:
         logger.error(f"Error deleting cache entry: {str(e)}")
         return jsonify({'error': 'Failed to delete cache entry'}), 500
+
 
 @app.errorhandler(404)
 def not_found(error):
