@@ -71,9 +71,41 @@ def handle_dynamic_path(dynamic_path=""):
     """
     Handle all requests to dynamic paths under /api/
     Returns appropriate responses based on the HTTP method used
+    Supports timeout via ?timeout=Xs query parameter
     """
     try:
-        # Validate the request
+        # Get timeout from query parameter (e.g., ?timeout=30s)
+        timeout_str = request.args.get('timeout', '')
+        timeout = None
+        if timeout_str:
+            try:
+                # Remove 's' suffix if present and convert to float
+                timeout = float(timeout_str.rstrip('s'))
+                if timeout <= 0:
+                    raise ValueError("Timeout must be positive")
+            except ValueError:
+                return jsonify({
+                    'error': 'Invalid timeout value',
+                    'message': 'Timeout must be a positive number in seconds (e.g., 30 or 30s)'
+                }), 400
+
+        from functools import partial
+        from werkzeug.exceptions import TimeoutError
+        from flask import copy_current_request_context
+
+        if timeout:
+            # Wrap the request processing in a timeout context
+            import signal
+
+            def timeout_handler(signum, frame):
+                raise TimeoutError()
+
+            # Set the timeout
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(int(timeout))
+
+        try:
+            # Validate the request
         validation_result = validate_request(request)
         if not validation_result['valid']:
             return jsonify({
@@ -92,7 +124,15 @@ def handle_dynamic_path(dynamic_path=""):
         # Process the request based on HTTP method
         return jsonify(markdown_json_to_dict(raw_simulated_response))
 
+    except TimeoutError:
+        signal.alarm(0)  # Disable the alarm
+        return jsonify({
+            'error': 'Timeout',
+            'message': f'Request timed out after {timeout} seconds'
+        }), 408
     except Exception as e:
+        if timeout:
+            signal.alarm(0)  # Disable the alarm
         logger.error(f"Error processing request: {str(e)}")
         return jsonify({
             'error': 'Internal server error',
