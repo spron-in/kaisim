@@ -210,18 +210,21 @@ def get_all_cache_entries():
         logger.error(f"Error retrieving cache entries: {str(e)}")
         return jsonify({'error': 'Failed to retrieve cache entries'}), 500
 
-@app.route('/cache/<path:api_path>', methods=['GET'])
+@app.route('/cache/<uuid:cache_id>', methods=['GET'])
 @require_token
-def get_cache_entry(api_path):
-    """Get a cache entry"""
+def get_cache_entry(cache_id):
+    """Get a cache entry by its ID"""
     auth_token = request.headers.get('Authorization').split(' ')[1]
     try:
         cache_entry = APICache.query.filter(
-            db.or_(
-                db.and_(APICache.user_token == uuid.UUID(auth_token), APICache.api_path == api_path),
-                APICache.is_predefined == True
+            db.and_(
+                APICache.cache_id == cache_id,
+                db.or_(
+                    APICache.user_token == uuid.UUID(auth_token),
+                    APICache.is_predefined == True
+                )
             )
-        ).order_by(APICache.created_at.desc()).first()
+        ).first()
         
         if cache_entry:
             return jsonify({'response': cache_entry.response}), 200
