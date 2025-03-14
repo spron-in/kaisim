@@ -106,14 +106,14 @@ def handle_dynamic_path(dynamic_path=""):
 
         try:
             # Validate the request
-        validation_result = validate_request(request)
-        if not validation_result['valid']:
-            return jsonify({
-                'error': 'Invalid request',
-                'details': validation_result['message']
-            }), 400
+            validation_result = validate_request(request)
+            if not validation_result['valid']:
+                return jsonify({
+                    'error': 'Invalid request',
+                    'details': validation_result['message']
+                }), 400
 
-        # Log the incoming request
+            # Log the incoming request
         logger.debug(
             f"Received {request.method} request for path: {dynamic_path}")
         logger.debug(f"Request headers: {dict(request.headers)}")
