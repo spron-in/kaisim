@@ -5,7 +5,7 @@ import uuid
 from functools import wraps
 from app import app, logger
 from utils import validate_request, create_response, simulate_kubernetes_api, markdown_json_to_dict
-from database import init_db, store_cache, get_cache
+from models import db, APICache
 
 def require_token(f):
     @wraps(f)
@@ -169,14 +169,16 @@ def store_cache_entry():
 
     auth_token = request.headers.get('Authorization').split(' ')[1]
     try:
-        cache_id = store_cache(
-            user_token=auth_token,
+        cache_entry = APICache(
+            user_token=uuid.UUID(auth_token),
             api_path=data['api_path'],
             response=data['response']
         )
+        db.session.add(cache_entry)
+        db.session.commit()
         return jsonify({
             'message': 'Cache entry stored successfully',
-            'cache_id': str(cache_id)
+            'cache_id': str(cache_entry.cache_id)
         }), 201
     except Exception as e:
         logger.error(f"Error storing cache: {str(e)}")
@@ -188,9 +190,15 @@ def get_cache_entry(api_path):
     """Get a cache entry"""
     auth_token = request.headers.get('Authorization').split(' ')[1]
     try:
-        cached_response = get_cache(auth_token, api_path)
-        if cached_response:
-            return jsonify({'response': cached_response}), 200
+        cache_entry = APICache.query.filter(
+            db.or_(
+                db.and_(APICache.user_token == uuid.UUID(auth_token), APICache.api_path == api_path),
+                APICache.is_predefined == True
+            )
+        ).order_by(APICache.created_at.desc()).first()
+        
+        if cache_entry:
+            return jsonify({'response': cache_entry.response}), 200
         return jsonify({'error': 'Cache entry not found'}), 404
     except Exception as e:
         logger.error(f"Error retrieving cache: {str(e)}")
