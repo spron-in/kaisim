@@ -89,6 +89,7 @@ def request_details():
     return jsonify(details), 200
 
 
+@app.route('/openapi/<path:dynamic_path>', methods=['GET'])
 @app.route('/api', methods=['GET'])
 @app.route('/apis', methods=['GET'])
 @app.route('/api/<path:dynamic_path>',
