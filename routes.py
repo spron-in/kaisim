@@ -184,6 +184,32 @@ def store_cache_entry():
         logger.error(f"Error storing cache: {str(e)}")
         return jsonify({'error': 'Failed to store cache entry'}), 500
 
+@app.route('/cache/all', methods=['GET'])
+@require_token
+def get_all_cache_entries():
+    """Get all cache entries for a user"""
+    auth_token = request.headers.get('Authorization').split(' ')[1]
+    try:
+        cache_entries = APICache.query.filter(
+            db.or_(
+                APICache.user_token == uuid.UUID(auth_token),
+                APICache.is_predefined == True
+            )
+        ).order_by(APICache.created_at.desc()).all()
+        
+        entries = [{
+            'cache_id': str(entry.cache_id),
+            'api_path': entry.api_path,
+            'response': entry.response,
+            'created_at': entry.created_at.isoformat(),
+            'is_predefined': entry.is_predefined
+        } for entry in cache_entries]
+        
+        return jsonify({'entries': entries}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving cache entries: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve cache entries'}), 500
+
 @app.route('/cache/<path:api_path>', methods=['GET'])
 @require_token
 def get_cache_entry(api_path):
