@@ -1,5 +1,6 @@
 from flask import request, jsonify
 from datetime import datetime
+import signal
 from app import app, logger
 from utils import validate_request, create_response, simulate_kubernetes_api, markdown_json_to_dict
 
