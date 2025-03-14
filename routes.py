@@ -1,4 +1,5 @@
 from flask import request, jsonify
+import json
 from datetime import datetime
 import signal
 import uuid
@@ -131,7 +132,25 @@ def handle_dynamic_path(dynamic_path=""):
                 f"Received {request.method} request for path: {dynamic_path}")
             logger.debug(f"Request headers: {dict(request.headers)}")
             logger.debug(f"Request data: {request.get_json(silent=True)}")
-        
+
+            # Check cache first
+            auth_token = request.headers.get('Authorization').split(' ')[1]
+            api_path = f"/api/{dynamic_path}" if dynamic_path else "/api"
+            
+            cache_entries = APICache.query.filter(
+                db.and_(
+                    APICache.api_path == api_path,
+                    db.or_(
+                        APICache.user_token == uuid.UUID(auth_token),
+                        APICache.is_predefined == True
+                    )
+                )
+            ).order_by(APICache.created_at.desc()).first()
+            
+            if cache_entries:
+                return jsonify(json.loads(cache_entries.response)), 200
+                
+            # If not in cache, generate response
             raw_simulated_response = simulate_kubernetes_api(request)
             return jsonify(markdown_json_to_dict(raw_simulated_response))
         except Exception as e:
