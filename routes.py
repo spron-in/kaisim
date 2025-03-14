@@ -113,6 +113,48 @@ def handle_dynamic_path(dynamic_path=""):
         from functools import partial
         from flask import copy_current_request_context
 
+        try:
+            if timeout:
+                signal.alarm(int(timeout))
+            # Validate the request
+            validation_result = validate_request(request)
+            if not validation_result['valid']:
+                return jsonify({
+                    'error': 'Invalid request',
+                    'details': validation_result['message']
+                }), 400
+        
+            # Log the incoming request
+            logger.debug(
+                f"Received {request.method} request for path: {dynamic_path}")
+            logger.debug(f"Request headers: {dict(request.headers)}")
+            logger.debug(f"Request data: {request.get_json(silent=True)}")
+        
+            raw_simulated_response = simulate_kubernetes_api(request)
+            return jsonify(markdown_json_to_dict(raw_simulated_response))
+        except Exception as e:
+            logger.error(f"Error processing request: {str(e)}")
+            return jsonify({
+                'error': 'Internal server error',
+                'message': str(e)
+            }), 500
+        
+    except TimeoutError:
+        signal.alarm(0)  # Disable the alarm
+        return jsonify({
+            'error': 'Timeout',
+            'message': f'Request timed out after {timeout} seconds'
+        }), 408
+    
+    except Exception as e:
+        if timeout:
+            signal.alarm(0)  # Disable the alarm
+        logger.error(f"Error processing request: {str(e)}")
+        return jsonify({
+            'error': 'Internal server error',
+            'message': str(e)
+        }), 500
+
 
 @app.route('/cache', methods=['POST'])
 @require_token
@@ -153,49 +195,6 @@ def get_cache_entry(api_path):
     except Exception as e:
         logger.error(f"Error retrieving cache: {str(e)}")
         return jsonify({'error': 'Failed to retrieve cache entry'}), 500
-
-
-        try:
-            if timeout:
-                signal.alarm(int(timeout))
-            # Validate the request
-            validation_result = validate_request(request)
-            if not validation_result['valid']:
-                return jsonify({
-                    'error': 'Invalid request',
-                    'details': validation_result['message']
-                }), 400
-
-            # Log the incoming request
-            logger.debug(
-                f"Received {request.method} request for path: {dynamic_path}")
-            logger.debug(f"Request headers: {dict(request.headers)}")
-            logger.debug(f"Request data: {request.get_json(silent=True)}")
-
-            raw_simulated_response = simulate_kubernetes_api(request)
-            return jsonify(markdown_json_to_dict(raw_simulated_response))
-        except Exception as e:
-            logger.error(f"Error processing request: {str(e)}")
-            return jsonify({
-                'error': 'Internal server error',
-                'message': str(e)
-            }), 500
-
-    except TimeoutError:
-        signal.alarm(0)  # Disable the alarm
-        return jsonify({
-            'error': 'Timeout',
-            'message': f'Request timed out after {timeout} seconds'
-        }), 408
-    except Exception as e:
-        if timeout:
-            signal.alarm(0)  # Disable the alarm
-        logger.error(f"Error processing request: {str(e)}")
-        return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
-        }), 500
-
 
 @app.errorhandler(404)
 def not_found(error):
