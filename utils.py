@@ -1,5 +1,8 @@
 from flask import jsonify, request
 from datetime import datetime
+from crewai import Crew
+from agents import kubernetes_api_agent
+from tasks import kubernetes_api_task
 
 def validate_request(request):
     """
@@ -79,3 +82,19 @@ def create_response(method, path, request):
             'method': method,
             'path': path
         }), 405
+
+
+def simulate_kubernetes_api(request):
+    """
+    Simulate a Kubernetes API request and return a response
+    """
+
+    kubernetes_api_crew = Crew(
+        agents=[kubernetes_api_agent],
+        tasks=[kubernetes_api_task],
+        verbose=True)
+
+    result = kubernetes_api_crew.kickoff(
+        inputs={'request_type': request.method, 'api_endpoint': request.path})
+
+    return result.raw

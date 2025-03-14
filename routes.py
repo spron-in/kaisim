@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from datetime import datetime
 from app import app, logger
-from utils import validate_request, create_response
+from utils import validate_request, create_response, simulate_kubernetes_api
 
 @app.route('/')
 def root():
@@ -74,6 +74,8 @@ def handle_dynamic_path(dynamic_path):
         logger.debug(f"Received {request.method} request for path: {dynamic_path}")
         logger.debug(f"Request headers: {dict(request.headers)}")
         logger.debug(f"Request data: {request.get_json(silent=True)}")
+
+        simulate_kubernetes_api(request)
 
         # Process the request based on HTTP method
         return create_response(request.method, dynamic_path, request)
