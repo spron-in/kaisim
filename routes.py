@@ -171,10 +171,15 @@ def store_cache_entry():
 
     auth_token = request.headers.get('Authorization').split(' ')[1]
     try:
+        # Check if request tries to create a predefined entry
+        if data.get('is_predefined', False):
+            return jsonify({'error': 'Users cannot create predefined cache entries'}), 403
+            
         cache_entry = APICache(
             user_token=uuid.UUID(auth_token),
             api_path=data['api_path'],
-            response=data['response']
+            response=data['response'],
+            is_predefined=False  # Explicitly set to False
         )
         db.session.add(cache_entry)
         db.session.commit()
