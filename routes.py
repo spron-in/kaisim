@@ -120,9 +120,13 @@ def handle_dynamic_path(dynamic_path=""):
             logger.debug(f"Request data: {request.get_json(silent=True)}")
 
             raw_simulated_response = simulate_kubernetes_api(request)
-
-        # Process the request based on HTTP method
-        return jsonify(markdown_json_to_dict(raw_simulated_response))
+            return jsonify(markdown_json_to_dict(raw_simulated_response))
+        except Exception as e:
+            logger.error(f"Error processing request: {str(e)}")
+            return jsonify({
+                'error': 'Internal server error',
+                'message': str(e)
+            }), 500
 
     except TimeoutError:
         signal.alarm(0)  # Disable the alarm
