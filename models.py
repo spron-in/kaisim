@@ -27,16 +27,15 @@ def retry_on_disconnect(func):
         return func(*args, **kwargs)
     return wrapper
 
-# Add event listener to handle disconnects
-@event.listens_for(db.engine, "engine_connect")
-def ping_connection(connection, branch):
-    if branch:
-        return
-
-    try:
-        connection.scalar(db.select(1))
-    except Exception:
-        connection.invalidate()
+# Add connection check function
+def check_connection(app):
+    with app.app_context():
+        try:
+            db.session.execute(db.select(1))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
 class APICache(db.Model):
     __tablename__ = 'api_cache'

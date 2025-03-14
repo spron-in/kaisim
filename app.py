@@ -17,6 +17,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 with app.app_context():
     db.create_all()
+    # Test database connection
+    from models import check_connection
+    check_connection(app)
 
 # Import routes after app initialization
 from routes import *  # noqa: E402
