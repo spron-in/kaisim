@@ -5,7 +5,7 @@ import uuid
 from functools import wraps
 from app import app, logger
 from utils import validate_request, create_response, simulate_kubernetes_api, markdown_json_to_dict
-from models import db, APICache
+from models import db, APICache, retry_on_disconnect
 
 def require_token(f):
     @wraps(f)
