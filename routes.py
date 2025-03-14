@@ -1,10 +1,12 @@
 from flask import request, jsonify
 from datetime import datetime
-from app import app, logger
+from app import logger
+
+def register_routes(app):
 from utils import validate_request, create_response
 
 @app.route('/')
-def root():
+    def root():
     """
     Root endpoint showing welcome message and available endpoints
     """
@@ -25,7 +27,7 @@ def root():
     return response
 
 @app.route('/details', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
-def request_details():
+    def request_details():
     """
     Show all details about the incoming request
     """
@@ -56,7 +58,7 @@ def request_details():
     return jsonify(details), 200
 
 @app.route('/api/<path:dynamic_path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
-def handle_dynamic_path(dynamic_path):
+    def handle_dynamic_path(dynamic_path):
     """
     Handle all requests to dynamic paths under /api/
     Returns appropriate responses based on the HTTP method used
@@ -86,13 +88,13 @@ def handle_dynamic_path(dynamic_path):
         }), 500
 
 @app.errorhandler(404)
-def not_found(error):
+    def not_found(error):
     return jsonify({'error': 'Not found'}), 404
 
 @app.errorhandler(405)
-def method_not_allowed(error):
+    def method_not_allowed(error):
     return jsonify({'error': 'Method not allowed'}), 405
 
 @app.errorhandler(500)
-def internal_error(error):
+    def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
