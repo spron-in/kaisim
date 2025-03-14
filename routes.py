@@ -93,15 +93,9 @@ def handle_dynamic_path(dynamic_path=""):
         from functools import partial
         from flask import copy_current_request_context
 
-        def timeout_handler(signum, frame):
-            raise TimeoutError("Request timed out")
-
-        if timeout:
-            # Set the timeout
-            prev_handler = signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(int(timeout))
-
         try:
+            if timeout:
+                signal.alarm(int(timeout))
             # Validate the request
             validation_result = validate_request(request)
             if not validation_result['valid']:
