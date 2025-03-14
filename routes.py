@@ -55,6 +55,7 @@ def request_details():
 
     return jsonify(details), 200
 
+@app.route('/api', defaults={'dynamic_path': ''}, methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 @app.route('/api/<path:dynamic_path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 def handle_dynamic_path(dynamic_path):
     """
