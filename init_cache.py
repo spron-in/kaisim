@@ -7,31 +7,20 @@ def init_predefined_cache():
     """Initialize predefined cache entries"""
     predefined_entries = [
         {
-            "api_path": "/api/v1/namespaces/default/pods",
+            "api_path": "/api",
             "response": json.dumps({
-                "kind": "PodList",
-                "apiVersion": "v1",
-                "items": [
+                  "kind": "APIVersions",
+                  "versions": [
+                    "v1"
+                  ],
+                  "serverAddressByClientCIDRs": [
                     {
-                        "metadata": {
-                            "name": "example-pod",
-                            "namespace": "default"
-                        },
-                        "status": {
-                            "phase": "Running"
-                        }
+                      "clientCIDR": "0.0.0.0/0",
+                      "serverAddress": "10.128.0.85:443"
                     }
-                ]
+                  ]
             })
         },
-        {
-            "api_path": "/api/v1/namespaces/default/services",
-            "response": json.dumps({
-                "kind": "ServiceList",
-                "apiVersion": "v1",
-                "items": []
-            })
-        }
     ]
 
     for entry in predefined_entries:
