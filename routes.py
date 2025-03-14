@@ -8,14 +8,21 @@ def root():
     """
     Root endpoint showing welcome message and available endpoints
     """
-    response = {
-        "message": "I'm Kubernetes AI Simulator. I can respond to your kubectl requests with AI generated content. More at https://kais.im",
-        "endpoints": {
+    from flask import make_response
+    import json
+    from collections import OrderedDict
+
+    response_data = OrderedDict([
+        ("message", "I'm Kubernetes AI Simulator. I can respond to your kubectl requests with AI generated content. More at https://kais.im"),
+        ("endpoints", {
             "/api": "simulate kubernetes api requests and get responses generated with AI",
             "/details": "the endpoint to share all request details, for testing purposes"
-        }
-    }
-    return jsonify(response), 200, {'indent': 2}
+        })
+    ])
+    
+    response = make_response(json.dumps(response_data, indent=2))
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 @app.route('/details', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 def request_details():
