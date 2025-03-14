@@ -4,7 +4,8 @@ from flask import Flask
 from models import db
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+logging.basicConfig(level=getattr(logging, log_level))
 logger = logging.getLogger(__name__)
 
 # Create Flask app
