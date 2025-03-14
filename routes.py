@@ -212,7 +212,7 @@ def get_all_cache_entries():
         logger.error(f"Error retrieving cache entries: {str(e)}")
         return jsonify({'error': 'Failed to retrieve cache entries'}), 500
 
-@app.route('/cache/<int:cache_id>', methods=['GET'])
+@app.route('/cache/<uuid:cache_id>', methods=['GET'])
 @require_token
 def get_cache_entry(cache_id):
     """Get a cache entry by its ID"""
