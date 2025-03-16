@@ -11,18 +11,23 @@ db = SQLAlchemy()
 # Add retry logic for handling dropped connections
 def retry_on_disconnect(func):
     def wrapper(*args, **kwargs):
-        max_retries = 3
-        retry_delay = 1  # seconds
+        max_retries = 5
+        retry_delay = 2  # seconds
         
         for attempt in range(max_retries):
             try:
-                return func(*args, **kwargs)
+                db.session.rollback()  # Always rollback before retry
+                result = func(*args, **kwargs)
+                db.session.commit()  # Explicitly commit if successful
+                return result
             except OperationalError as e:
-                if "SSL connection has been closed unexpectedly" in str(e):
+                if any(msg in str(e) for msg in ["SSL connection has been closed unexpectedly", "connection already closed"]):
                     if attempt < max_retries - 1:
-                        sleep(retry_delay)
-                        db.session.rollback()
+                        sleep(retry_delay * (attempt + 1))  # Exponential backoff
                         continue
+                raise
+            except Exception:
+                db.session.rollback()
                 raise
         return func(*args, **kwargs)
     return wrapper
