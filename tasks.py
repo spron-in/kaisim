@@ -8,6 +8,6 @@ kubernetes_api_task = Task(
      "You should provide the response as if you are a real Kubernetes API. You can imagine resources as we are doing it for educational purposes.\n"
      ),
     expected_output=
-    ("A response to the API request mimicing the response of the real Kubernetes API server.\n"
+    ("A response to the API request mimicing the response of the real Kubernetes API server. Use creative names for Kubernetes resources.\n"
      ),
     agent=kubernetes_api_agent)
