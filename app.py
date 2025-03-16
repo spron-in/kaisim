@@ -3,6 +3,10 @@ import logging
 from flask import Flask
 from models import db
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Configure logging
 log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(level=getattr(logging, log_level))
@@ -22,10 +26,12 @@ with app.app_context():
     from models import check_connection
     check_connection(app)
 
+
 # Define web route
 @app.route('/web/')
 def web_index():
     return render_template('index.html')
+
 
 # Import routes after app initialization
 from routes import *  # noqa: E402
