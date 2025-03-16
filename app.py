@@ -22,5 +22,10 @@ with app.app_context():
     from models import check_connection
     check_connection(app)
 
+# Define web route
+@app.route('/web/')
+def web_index():
+    return render_template('index.html')
+
 # Import routes after app initialization
 from routes import *  # noqa: E402
