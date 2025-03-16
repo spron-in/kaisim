@@ -1,6 +1,13 @@
-from flask import request, jsonify
+from flask import request, jsonify, render_template
 import json
 from datetime import datetime
+
+
+@app.route('/web/')
+def web_index():
+    return render_template('index.html')
+
+
 import signal
 import uuid
 from functools import wraps
