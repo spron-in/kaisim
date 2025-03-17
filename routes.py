@@ -101,7 +101,14 @@ def handle_dynamic_path(dynamic_path=""):
     Handle all requests to dynamic paths under /api/
     Returns appropriate responses based on the HTTP method used
     Supports timeout via ?timeout=Xs query parameter
+    Rate limited to 60 requests per minute per token
     """
+    auth_token = request.headers.get('Authorization').split(' ')[1]
+    if not rate_limiter.is_allowed(auth_token):
+        return jsonify({
+            'error': 'Rate limit exceeded',
+            'message': 'Please try again later. Limit is 60 requests per minute.'
+        }), 429
     try:
         # Get timeout from query parameter (e.g., ?timeout=30s)
         timeout_str = request.args.get('timeout', '')

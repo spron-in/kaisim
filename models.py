@@ -4,9 +4,32 @@ from datetime import datetime
 import uuid
 from sqlalchemy import event
 from sqlalchemy.exc import OperationalError
-from time import sleep
+from time import sleep, time
+from collections import defaultdict
+import threading
+
+class RateLimiter:
+    def __init__(self, requests_per_minute=60):
+        self.requests_per_minute = requests_per_minute
+        self.tokens = defaultdict(list)
+        self.lock = threading.Lock()
+    
+    def is_allowed(self, token):
+        now = time()
+        minute_ago = now - 60
+        
+        with self.lock:
+            # Clean old requests
+            self.tokens[token] = [t for t in self.tokens[token] if t > minute_ago]
+            
+            # Check if under limit
+            if len(self.tokens[token]) < self.requests_per_minute:
+                self.tokens[token].append(now)
+                return True
+            return False
 
 db = SQLAlchemy()
+rate_limiter = RateLimiter(requests_per_minute=60)
 
 # Add retry logic for handling dropped connections
 def retry_on_disconnect(func):
