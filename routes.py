@@ -140,8 +140,13 @@ def handle_dynamic_path(dynamic_path=""):
             logger.debug(f"Request headers: {dict(request.headers)}")
             logger.debug(f"Request data: {request.get_json(silent=True)}")
 
-            # Check cache first
-            auth_token = request.headers.get('Authorization').split(' ')[1]
+            # Get existing auth_token and check rate limit
+            if not rate_limiter.is_allowed(auth_token):
+                return jsonify({
+                    'error': 'Rate limit exceeded',
+                    'message': 'Please try again later'
+                }), 429
+
             api_path = request.path
 
             # First try to find user's cache entry
