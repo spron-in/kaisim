@@ -92,6 +92,7 @@ def request_details():
 @app.route('/openapi/<path:dynamic_path>', methods=['GET'])
 @app.route('/api', methods=['GET'])
 @app.route('/apis', methods=['GET'])
+@app.route('/version', methods=['GET'])
 @app.route('/api/<path:dynamic_path>',
            methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 @app.route('/apis/<path:dynamic_path>', methods=['GET'])
@@ -154,15 +155,18 @@ def handle_dynamic_path(dynamic_path=""):
                 return jsonify(json.loads(cache_entry.response)), 200
 
             # Get IP from X-Forwarded-For or fallback to remote_addr
-            ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+            ip_address = request.headers.get('X-Forwarded-For',
+                                             request.remote_addr)
             if ip_address and ',' in ip_address:
                 ip_address = ip_address.split(',')[0].strip()
 
             # Check rate limit for both token and IP
             if not rate_limiter.is_allowed(auth_token, ip_address):
                 return jsonify({
-                    'error': 'Rate limit exceeded',
-                    'message': 'Please try again later. Limit is 5 requests per minute to non-cached endpoints.'
+                    'error':
+                    'Rate limit exceeded',
+                    'message':
+                    'Please try again later. Limit is 5 requests per minute to non-cached endpoints.'
                 }), 429
 
             # If not in cache, generate response
