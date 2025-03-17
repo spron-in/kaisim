@@ -136,14 +136,8 @@ def handle_dynamic_path(dynamic_path=""):
             logger.debug(f"Request headers: {dict(request.headers)}")
             logger.debug(f"Request data: {request.get_json(silent=True)}")
 
-            # Get existing auth_token and check rate limit
-            if not rate_limiter.is_allowed(auth_token):
-                return jsonify({
-                    'error': 'Rate limit exceeded',
-                    'message': 'Please try again later'
-                }), 429
-
             api_path = request.path
+            auth_token = request.headers.get('Authorization').split(' ')[1]
 
             # First try to find user's cache entry
             cache_entry = APICache.query.filter_by(
@@ -158,6 +152,13 @@ def handle_dynamic_path(dynamic_path=""):
 
             if cache_entry:
                 return jsonify(json.loads(cache_entry.response)), 200
+
+            # Check rate limit
+            if not rate_limiter.is_allowed(auth_token):
+                return jsonify({
+                    'error': 'Rate limit exceeded',
+                    'message': 'Please try again later'
+                }), 429
 
             # If not in cache, generate response
             raw_simulated_response = simulate_kubernetes_api(request)
