@@ -13,23 +13,27 @@ class RateLimiter:
     def __init__(self, requests_per_minute=60):
         self.requests_per_minute = requests_per_minute
         self.tokens = defaultdict(list)
+        self.ips = defaultdict(list)
         self.lock = threading.Lock()
 
-    def is_allowed(self, token):
+    def is_allowed(self, token, ip_address):
         now = time()
         minute_ago = now - 60
 
         with self.lock:
-            # Clean old requests
-            self.tokens[token] = [
-                t for t in self.tokens[token] if t > minute_ago
-            ]
+            # Clean old requests for both token and IP
+            self.tokens[token] = [t for t in self.tokens[token] if t > minute_ago]
+            self.ips[ip_address] = [t for t in self.ips[ip_address] if t > minute_ago]
 
-            # Check if under limit
-            if len(self.tokens[token]) < self.requests_per_minute:
-                self.tokens[token].append(now)
-                return True
-            return False
+            # Check if either token or IP is over limit
+            if (len(self.tokens[token]) >= self.requests_per_minute or 
+                len(self.ips[ip_address]) >= self.requests_per_minute):
+                return False
+
+            # If under limit, record the request for both
+            self.tokens[token].append(now)
+            self.ips[ip_address].append(now)
+            return True
 
 
 db = SQLAlchemy()

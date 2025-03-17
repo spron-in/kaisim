@@ -153,11 +153,16 @@ def handle_dynamic_path(dynamic_path=""):
             if cache_entry:
                 return jsonify(json.loads(cache_entry.response)), 200
 
-            # Check rate limit
-            if not rate_limiter.is_allowed(auth_token):
+            # Get IP from X-Forwarded-For or fallback to remote_addr
+            ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+            if ip_address and ',' in ip_address:
+                ip_address = ip_address.split(',')[0].strip()
+
+            # Check rate limit for both token and IP
+            if not rate_limiter.is_allowed(auth_token, ip_address):
                 return jsonify({
                     'error': 'Rate limit exceeded',
-                    'message': 'Please try again later'
+                    'message': 'Please try again later. Limit is 60 requests per minute.'
                 }), 429
 
             # If not in cache, generate response
