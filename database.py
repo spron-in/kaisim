@@ -1,7 +1,24 @@
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
 from models import db, APICache
+from sqlalchemy import create_engine
+from sqlalchemy.pool import QueuePool
+from app import app
+
+def get_db():
+    """Get database connection with pooling"""
+    engine = create_engine(
+        app.config['SQLALCHEMY_DATABASE_URI'],
+        poolclass=QueuePool,
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=30,
+        pool_recycle=1800,  # Recycle connections after 30 minutes
+        pool_pre_ping=True  # Enable automatic reconnection
+    )
+    return engine.connect()
 
 def init_db():
     """Initialize database tables"""
