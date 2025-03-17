@@ -162,7 +162,7 @@ def handle_dynamic_path(dynamic_path=""):
             if not rate_limiter.is_allowed(auth_token, ip_address):
                 return jsonify({
                     'error': 'Rate limit exceeded',
-                    'message': 'Please try again later. Limit is 60 requests per minute.'
+                    'message': 'Please try again later. Limit is 5 requests per minute to non-cached endpoints.'
                 }), 429
 
             # If not in cache, generate response
